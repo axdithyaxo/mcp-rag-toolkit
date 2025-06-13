@@ -1,0 +1,22 @@
+ZenithTech Platform — Product Installation Guide v2.1
+
+Welcome to the installation guide for deploying ZenithCore on your internal infrastructure.
+
+**Supported Platforms:**
+- Ubuntu 20.04 LTS / Red Hat Enterprise Linux 8
+- Windows Server 2019
+
+**Pre-Installation Checklist:**
+- Root/admin access required
+- Firewall port 443 must be open
+- Minimum: 16GB RAM, 100GB disk, 4-core CPU
+
+**Installation Steps:**
+1. Download installer: internal repo or zenithtech.global/install
+2. Run script: `bash install-core.sh` (Linux) or `install_core.exe` (Windows)
+3. Follow prompts and restart the service daemon
+4. Verify with: `zen status` or system tray check (Windows)
+
+**Support:**
+Email: techsupport@zenithtech.global  
+Docs: confluence.zenithtech.global/zenithcore

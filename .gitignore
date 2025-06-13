@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Environment
+.venv/
+.env
+*.env
+
+# Logs and indexes
+logs/
+index/
+*.log
+*.pkl
+*.index
+
+# VSCode settings
+.vscode/

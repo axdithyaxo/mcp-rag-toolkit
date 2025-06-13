@@ -1,0 +1,11 @@
+file_path,status,reason
+data/enterprise_rag_sample_docs_v3/projects/project_milestones.csv,Indexed,
+data/enterprise_rag_sample_docs_v3/it/Product_Installation_Guide.txt,Indexed,
+data/enterprise_rag_sample_docs_v3/it/support_tickets.csv,Indexed,
+data/enterprise_rag_sample_docs_v3/hr/Employee_Benefits_2024.pdf,Indexed,
+data/enterprise_rag_sample_docs_v3/hr/New_Manager_Toolkit.md,Indexed,
+data/enterprise_rag_sample_docs_v3/hr/HR_FAQs.html,Indexed,
+data/enterprise_rag_sample_docs_v3/finance/Q3_Team_Meeting_Notes.docx,Indexed,
+data/enterprise_rag_sample_docs_v3/finance/customer_feedback.csv,Indexed,
+data/enterprise_rag_sample_docs_v3/finance/department_budgets_2023.csv,Indexed,
+data/enterprise_rag_sample_docs_v3/company/employee_directory.csv,Indexed,

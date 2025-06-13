@@ -1,7 +1,7 @@
 [project]
 name = "mcp-rag-toolkit"
 version = "0.1.0"
-authors = [{ name = "Your Name", email = "your@email.com" }]
+authors = [{ name = "Aadithya Vishnu Sajeev", email = "axdithya@gmail.com" }]
 description = "A local RAG toolkit using SQL + Documents"
 readme = "README.md"
 requires-python = ">=3.10"

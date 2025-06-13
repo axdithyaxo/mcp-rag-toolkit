@@ -11,24 +11,28 @@ def run_sql_query(query: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Resulting data as a Pandas DataFrame.
     """
+    conn = None
     try:
         # Establish the database connection
         conn = psycopg2.connect(
             host="localhost",
             database="zenith_tech",
             user="aadithya",
-            password="",  # Fill in if needed
+            password="",  # Provide password if needed
             port=5432
         )
 
-        # Execute the query and fetch results into a DataFrame
-        df = pd.read_sql(query, conn)
+        # Use context manager for the connection to ensure closure
+        with conn.cursor() as cursor:
+            df = pd.read_sql(query, conn)
 
-        # Close the connection
-        conn.close()
-
-        return df.to_dict(orient="records")
+        return df
 
     except Exception as e:
         print(f"[ERROR] Failed to run query: {e}")
-        return {"error": str(e)}
+        # You may want to re-raise or handle differently
+        return pd.DataFrame()
+
+    finally:
+        if conn is not None:
+            conn.close()

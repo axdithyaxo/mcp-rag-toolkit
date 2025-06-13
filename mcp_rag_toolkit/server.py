@@ -21,35 +21,81 @@ mcp = FastMCP("ZenithTechRAG", dependencies=[
     "pandas", "psycopg2-binary"
 ])
 
+import json
+from mcp_rag_toolkit.document_search import search_documents
+
+import json
+import os
+from mcp_rag_toolkit.document_search import search_documents
+
+
+
 @mcp.tool()
 def retrieve_docs(question: str) -> str:
-    """
-    Retrieve document snippets related to the user's question using semantic similarity.
+    try:
+        raw_results = search_documents(question)
+        
+        # Parse if raw_results is JSON string
+        if isinstance(raw_results, str):
+            search_results = json.loads(raw_results)
+        else:
+            search_results = raw_results
 
-    Args:
-        question (str): A user’s natural language question.
+        snippets = []
+        for result in search_results:
+            # Defensive: result might still be a string (unlikely but just in case)
+            if isinstance(result, str):
+                result = json.loads(result)
+            
+            path = result.get("path")
+            score = result.get("rank") or result.get("score") or 0
+            if path:
+                content_json = read_file(path)
+                if isinstance(content_json, str):
+                    # parse content JSON string to dict
+                    content_obj = json.loads(content_json)
+                    content = content_obj.get("content", "")
+                else:
+                    content = content_json
+                snippets.append({
+                    "content": content[:1000],  # truncate snippet
+                    "source": path,
+                    "relevance_score": score
+                })
 
-    Returns:
-        str: Relevant document snippets retrieved from the corpus.
-    """
-    return search_documents(question)
+        return json.dumps({"snippets": snippets})
 
+    except Exception as e:
+        # Return error details as JSON string
+        return json.dumps({"error": str(e)})
 @mcp.tool()
 def query_sql(sql: str) -> str:
-    """
-    Execute a raw SQL query on the underlying structured data source.
+    try:
+        df = run_sql_query(sql)
+        if df is None or df.empty:
+            return json.dumps({
+                "columns": [],
+                "rows": [],
+                "row_count": 0
+            })
 
-    Args:
-        sql (str): A valid SQL query string.
+        columns = list(df.columns)
+        rows = df.values.tolist()
+        row_count = len(df)
 
-    Returns:
-        str: Tabulated markdown output of the query result.
+        return json.dumps({
+            "columns": columns,
+            "rows": rows,
+            "row_count": row_count
+        })
 
-    Example:
-        >>> query_sql("SELECT name FROM employee_directory WHERE department = 'IT';")
-    """
-    df = run_sql_query(sql)
-    return df.to_markdown()
+    except Exception as e:
+        return json.dumps({
+            "columns": [],
+            "rows": [],
+            "row_count": 0,
+            "error": str(e)
+        })
 
 @mcp.resource("sql://generate/{prompt}")
 def generate_sql(prompt: str) -> str:
@@ -86,10 +132,18 @@ def data_overview() -> str:
         "Use `query_sql(sql: str)` to query SQL tables or `retrieve_docs(question: str)` to retrieve text from documents."
     )
 
+import os
+import logging
+import json
+from docx import Document
+
 @mcp.tool()
 def read_file(path: str) -> str:
     """
-    Read the full content of a given document path.
+    Read the full content of a given document path and return JSON response.
+
+    Returns:
+        JSON string with either `content` or `error` key.
     """
     try:
         # Normalize relative to project root
@@ -97,65 +151,89 @@ def read_file(path: str) -> str:
         full_path = os.path.abspath(os.path.join(base_dir, path))
 
         if not os.path.isfile(full_path):
-            return f"⚠️ File not found: {full_path}"
+            error_msg = f"⚠️ File not found: {full_path}"
+            logging.warning(error_msg)
+            return json.dumps({"error": error_msg})
 
         if full_path.endswith(".docx"):
             try:
                 doc = Document(full_path)
                 paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
                 if not paragraphs:
-                    return f"⚠️ The document {path} is empty or contains no readable text."
-                logging.info(full_path)
-                return "\n".join(paragraphs)
+                    error_msg = f"⚠️ The document {path} is empty or contains no readable text."
+                    logging.warning(error_msg)
+                    return json.dumps({"error": error_msg})
+                content = "\n".join(paragraphs)
+                logging.info(f"Read DOCX file: {full_path}")
+                return json.dumps({"content": content, "path": path})
             except Exception as e:
-                return f"⚠️ Failed to read DOCX file {path}: {e}"
+                error_msg = f"⚠️ Failed to read DOCX file {path}: {e}"
+                logging.error(error_msg)
+                return json.dumps({"error": error_msg})
+
         elif full_path.endswith(".pdf"):
             try:
                 import fitz  # PyMuPDF
                 doc = fitz.open(full_path)
                 content = "\n".join(page.get_text() for page in doc)
                 if not content.strip():
-                    return f"⚠️ The PDF {path} is empty or contains no readable text."
-                logging.info(full_path)
-                return content
+                    error_msg = f"⚠️ The PDF {path} is empty or contains no readable text."
+                    logging.warning(error_msg)
+                    return json.dumps({"error": error_msg})
+                logging.info(f"Read PDF file: {full_path}")
+                return json.dumps({"content": content, "path": path})
             except Exception as e:
-                return f"⚠️ Failed to read PDF file {path}: {e}"
+                error_msg = f"⚠️ Failed to read PDF file {path}: {e}"
+                logging.error(error_msg)
+                return json.dumps({"error": error_msg})
+
         else:
-            with open(full_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                logging.info(full_path)
-                return content
+            try:
+                with open(full_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                if not content.strip():
+                    error_msg = f"⚠️ The file {path} is empty."
+                    logging.warning(error_msg)
+                    return json.dumps({"error": error_msg})
+                logging.info(f"Read text file: {full_path}")
+                return json.dumps({"content": content, "path": path})
+            except Exception as e:
+                error_msg = f"⚠️ Failed to read text file {path}: {e}"
+                logging.error(error_msg)
+                return json.dumps({"error": error_msg})
+
     except Exception as e:
-        return f"⚠️ Could not read file: {e}"
-server = mcp
+        error_msg = f"⚠️ Could not read file: {e}"
+        logging.error(error_msg)
+        return json.dumps({"error": error_msg})
+
+
 
 
 # --- MCP tool: List indexed and skipped files ---
 @mcp.tool()
 def list_indexed_files() -> str:
-    """
-    Returns a summary of indexed and skipped files from FAISS indexing logs.
-    Useful for debugging document inclusion/exclusion for RAG.
-    """
     indexed_files = []
     skipped_files = []
 
     try:
-        # Load indexed file paths
         with open(os.path.join(os.path.dirname(__file__), "..", "index", "doc_texts.pkl"), "rb") as f:
             indexed_files = pickle.load(f)
     except Exception as e:
-        indexed_files = [f"⚠️ Could not read doc_texts.pkl: {e}"]
+        indexed_files = []
 
     try:
-        # Parse skipped files from index_log.txt
         log_path = os.path.join(os.path.dirname(__file__), "..", "index", "index_log.txt")
         if os.path.exists(log_path):
             with open(log_path, "r") as logf:
                 skipped_files = [line.strip().split("⚠️ Skipped:")[-1].strip() for line in logf if "⚠️ Skipped:" in line]
     except Exception as e:
-        skipped_files = [f"⚠️ Could not read index_log.txt: {e}"]
+        skipped_files = []
 
-    report = f"✅ Indexed Files ({len(indexed_files)}):\n" + "\n".join(f"- {p}" for p in indexed_files)
-    report += f"\n\n❌ Skipped Files ({len(skipped_files)}):\n" + ("\n".join(f"- {p}" for p in skipped_files) if skipped_files else "None logged.")
-    return report
+    return json.dumps({
+        "indexed_files": indexed_files,
+        "skipped_files": skipped_files,
+        "total_indexed": len(indexed_files),
+        "total_skipped": len(skipped_files),
+        "index_status": "complete" if indexed_files else "empty"
+    })

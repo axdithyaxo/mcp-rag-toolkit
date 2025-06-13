@@ -30,46 +30,39 @@ from mcp_rag_toolkit.document_search import search_documents
 
 
 
+import json
+
+import json
+
 @mcp.tool()
 def retrieve_docs(question: str) -> str:
-    try:
-        raw_results = search_documents(question)
-        
-        # Parse if raw_results is JSON string
-        if isinstance(raw_results, str):
-            search_results = json.loads(raw_results)
-        else:
-            search_results = raw_results
+    """
+    Retrieve document snippets related to the user's question using semantic similarity.
+    Returns a JSON string with documents, metadata, scores, and timing info.
+    """
+    results = search_documents(question)
+    return json.dumps(results, indent=2)
 
-        snippets = []
-        for result in search_results:
-            # Defensive: result might still be a string (unlikely but just in case)
-            if isinstance(result, str):
-                result = json.loads(result)
-            
-            path = result.get("path")
-            score = result.get("rank") or result.get("score") or 0
-            if path:
-                content_json = read_file(path)
-                if isinstance(content_json, str):
-                    # parse content JSON string to dict
-                    content_obj = json.loads(content_json)
-                    content = content_obj.get("content", "")
-                else:
-                    content = content_json
-                snippets.append({
-                    "content": content[:1000],  # truncate snippet
-                    "source": path,
-                    "relevance_score": score
-                })
 
-        return json.dumps({"snippets": snippets})
-
-    except Exception as e:
-        # Return error details as JSON string
-        return json.dumps({"error": str(e)})
 @mcp.tool()
 def query_sql(sql: str) -> str:
+    """
+    Execute a raw SQL query on the underlying PostgreSQL database.
+
+    IMPORTANT:
+    - This tool works ONLY with PostgreSQL.
+    - Using other SQL dialects (e.g., SQLite) may cause syntax errors.
+    
+    Args:
+        sql (str): A valid PostgreSQL SQL query string.
+    
+    Returns:
+        str: JSON string containing:
+            - columns: list of column names
+            - rows: list of rows (each a list of column values)
+            - row_count: number of rows returned
+            - error: optional, error message if query fails
+    """
     try:
         df = run_sql_query(sql)
         if df is None or df.empty:
@@ -137,73 +130,76 @@ import logging
 import json
 from docx import Document
 
+import os
+import json
+import logging
+from docx import Document
+
 @mcp.tool()
 def read_file(path: str) -> str:
     """
     Read the full content of a given document path and return JSON response.
 
+    Supports both:
+    - Full paths as returned by list_indexed_files (e.g., data/enterprise_rag_sample_docs_v3/hr/...)
+    - Relative paths from base data directory (e.g., hr/...)
+
+    Args:
+        path (str): Document path, either full or relative.
+
     Returns:
-        JSON string with either `content` or `error` key.
+        JSON string with either:
+          - {"content": "...file contents...", "path": "..."}
+          - {"error": "...error message..."}
     """
-    try:
-        # Normalize relative to project root
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "enterprise_rag_sample_docs_v3"))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "enterprise_rag_sample_docs_v3"))
+
+    # Determine full path, support full paths from list_indexed_files
+    if path.startswith("data/enterprise_rag_sample_docs_v3"):
+        full_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", path))
+    else:
         full_path = os.path.abspath(os.path.join(base_dir, path))
 
-        if not os.path.isfile(full_path):
-            error_msg = f"⚠️ File not found: {full_path}"
-            logging.warning(error_msg)
-            return json.dumps({"error": error_msg})
+    if not os.path.isfile(full_path):
+        error_msg = f"⚠️ File not found: {full_path}"
+        logging.warning(error_msg)
+        return json.dumps({"error": error_msg})
 
+    try:
         if full_path.endswith(".docx"):
-            try:
-                doc = Document(full_path)
-                paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-                if not paragraphs:
-                    error_msg = f"⚠️ The document {path} is empty or contains no readable text."
-                    logging.warning(error_msg)
-                    return json.dumps({"error": error_msg})
-                content = "\n".join(paragraphs)
-                logging.info(f"Read DOCX file: {full_path}")
-                return json.dumps({"content": content, "path": path})
-            except Exception as e:
-                error_msg = f"⚠️ Failed to read DOCX file {path}: {e}"
-                logging.error(error_msg)
+            doc = Document(full_path)
+            paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+            if not paragraphs:
+                error_msg = f"⚠️ The document {path} is empty or contains no readable text."
+                logging.warning(error_msg)
                 return json.dumps({"error": error_msg})
+            content = "\n".join(paragraphs)
+            logging.info(f"Read DOCX file: {full_path}")
+            return json.dumps({"content": content, "path": path})
 
         elif full_path.endswith(".pdf"):
-            try:
-                import fitz  # PyMuPDF
-                doc = fitz.open(full_path)
-                content = "\n".join(page.get_text() for page in doc)
-                if not content.strip():
-                    error_msg = f"⚠️ The PDF {path} is empty or contains no readable text."
-                    logging.warning(error_msg)
-                    return json.dumps({"error": error_msg})
-                logging.info(f"Read PDF file: {full_path}")
-                return json.dumps({"content": content, "path": path})
-            except Exception as e:
-                error_msg = f"⚠️ Failed to read PDF file {path}: {e}"
-                logging.error(error_msg)
+            import fitz  # PyMuPDF
+            doc = fitz.open(full_path)
+            content = "\n".join(page.get_text() for page in doc)
+            if not content.strip():
+                error_msg = f"⚠️ The PDF {path} is empty or contains no readable text."
+                logging.warning(error_msg)
                 return json.dumps({"error": error_msg})
+            logging.info(f"Read PDF file: {full_path}")
+            return json.dumps({"content": content, "path": path})
 
         else:
-            try:
-                with open(full_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                if not content.strip():
-                    error_msg = f"⚠️ The file {path} is empty."
-                    logging.warning(error_msg)
-                    return json.dumps({"error": error_msg})
-                logging.info(f"Read text file: {full_path}")
-                return json.dumps({"content": content, "path": path})
-            except Exception as e:
-                error_msg = f"⚠️ Failed to read text file {path}: {e}"
-                logging.error(error_msg)
+            with open(full_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            if not content.strip():
+                error_msg = f"⚠️ The file {path} is empty."
+                logging.warning(error_msg)
                 return json.dumps({"error": error_msg})
+            logging.info(f"Read text file: {full_path}")
+            return json.dumps({"content": content, "path": path})
 
     except Exception as e:
-        error_msg = f"⚠️ Could not read file: {e}"
+        error_msg = f"⚠️ Failed to read file {path}: {e}"
         logging.error(error_msg)
         return json.dumps({"error": error_msg})
 

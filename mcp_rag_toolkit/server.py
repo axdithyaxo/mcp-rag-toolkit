@@ -38,7 +38,23 @@ import json
 def retrieve_docs(question: str) -> str:
     """
     Retrieve document snippets related to the user's question using semantic similarity.
-    Returns a JSON string with documents, metadata, scores, and timing info.
+
+    Args:
+        question (str): Natural language question to search for in indexed documents.
+
+    Returns:
+        JSON string with:
+            - documents: list of relevant documents, each containing:
+                * file_path: path to the document
+                * content_snippet: brief identifier or excerpt of the document
+                * relevance_score: similarity score (lower means more relevant)
+                * metadata: dict with file_type, last_modified date, etc.
+            - query: the original search question
+            - total_results: number of documents found
+            - search_time_ms: time taken to perform the search in milliseconds
+
+    Note:
+        Content snippets are brief identifiers. Use the read_file tool to get full document content.
     """
     results = search_documents(question)
     return json.dumps(results, indent=2)
@@ -50,18 +66,27 @@ def query_sql(sql: str) -> str:
     Execute a raw SQL query on the underlying PostgreSQL database.
 
     IMPORTANT:
-    - This tool works ONLY with PostgreSQL.
-    - Using other SQL dialects (e.g., SQLite) may cause syntax errors.
-    
+        - This tool works ONLY with PostgreSQL.
+        - Using other SQL dialects (e.g., SQLite) may cause syntax errors.
+
+    Available tables:
+        - employee_directory: Contains employee_id, name, role, department, email
+
+    Common example queries:
+        - List tables:
+          SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+        - Check columns in a table:
+          SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'table_name';
+
     Args:
         sql (str): A valid PostgreSQL SQL query string.
-    
+
     Returns:
-        str: JSON string containing:
+        JSON string containing:
             - columns: list of column names
             - rows: list of rows (each a list of column values)
             - row_count: number of rows returned
-            - error: optional, error message if query fails
+            - error: optional, error message if the query fails
     """
     try:
         df = run_sql_query(sql)
@@ -141,16 +166,19 @@ def read_file(path: str) -> str:
     Read the full content of a given document path and return JSON response.
 
     Supports both:
-    - Full paths as returned by list_indexed_files (e.g., data/enterprise_rag_sample_docs_v3/hr/...)
-    - Relative paths from base data directory (e.g., hr/...)
+        - Full paths as returned by list_indexed_files (e.g., data/enterprise_rag_sample_docs_v3/hr/...)
+        - Relative paths from the base data directory (e.g., hr/...)
 
     Args:
         path (str): Document path, either full or relative.
 
     Returns:
         JSON string with either:
-          - {"content": "...file contents...", "path": "..."}
-          - {"error": "...error message..."}
+            - {"content": "...file contents...", "path": "..."}
+            - {"error": "...error message..."}
+
+    Tip:
+        Copy paths directly from list_indexed_files output for guaranteed compatibility.
     """
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "enterprise_rag_sample_docs_v3"))
 
@@ -209,6 +237,19 @@ def read_file(path: str) -> str:
 # --- MCP tool: List indexed and skipped files ---
 @mcp.tool()
 def list_indexed_files() -> str:
+    """
+    Lists files that have been indexed in the system.
+
+    Returns:
+        JSON string with:
+            - indexed_files: list of full file paths of indexed documents
+            - total_indexed: count of indexed files
+            - total_skipped: count of files skipped during indexing
+            - index_status: status string ("complete" or "empty")
+
+    Usage:
+        Use the returned file paths directly with the read_file tool for content access.
+    """
     indexed_files = []
     skipped_files = []
 

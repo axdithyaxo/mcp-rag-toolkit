@@ -1,0 +1,6 @@
+CRON JOB STARTED: Mon Jun 16 23:39:30 IST 2025
+update_index_cron.sh: line 12: /Users/aadithya/.poetry/bin/poetry: No such file or directory
+CRON JOB ENDED: Mon Jun 16 23:39:30 IST 2025
+CRON JOB STARTED: Mon Jun 16 23:41:24 IST 2025
+No new documents to index.
+CRON JOB ENDED: Mon Jun 16 23:41:29 IST 2025

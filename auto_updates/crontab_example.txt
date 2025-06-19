@@ -1,0 +1,2 @@
+# Runs update_index_cron.sh every 5 hours
+0 */5 * * * /Users/aadithya/Desktop/mcp-servers/rag_final/mcp-rag-toolkit/update/update_index_cron.sh

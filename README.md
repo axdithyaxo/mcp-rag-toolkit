@@ -4,19 +4,19 @@
 
 ---
 
-## 🌟 Features
+##  Features
 
-- 🔍 **Semantic Search** over local documents using FAISS and Sentence Transformers
-- 🧠 **LLM-augmented Prompt Generation** with context-aware answer generation
-- 🗃️ **Support for structured (SQL)** and **unstructured (PDF, DOCX, TXT, etc.)** data
-- ⚙️ **Agentic Tool Design** using FastMCP and Claude Desktop
-- 📦 Modular tool structure for easy extension and maintainability
+-  **Semantic Search** over local documents using FAISS and Sentence Transformers
+-  **LLM-augmented Prompt Generation** with context-aware answer generation
+-  **Support for structured (SQL)** and **unstructured (PDF, DOCX, TXT, etc.)** data
+-  **Agentic Tool Design** using FastMCP and Claude Desktop
+-  Modular tool structure for easy extension and maintainability
 - 🕒 **Auto-updating** FAISS index using cron jobs
-- 🔐 Fully local and private — no external APIs needed
+-  Fully local and private — no external APIs needed
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 mcp-rag-toolkit/
@@ -37,9 +37,9 @@ mcp-rag-toolkit/
 
 ---
 
-## 🚀 How It Works
+##  How It Works
 
-### 🔧 Tools Implemented
+###  Tools Implemented
 
 | Tool Name             | Description                                                |
 |----------------------|------------------------------------------------------------|
@@ -50,7 +50,7 @@ mcp-rag-toolkit/
 | `list_indexed_files` | (Optional) Lists paths of indexed files                   |
 | `rag_prompt`         | Dynamically generates a contextual LLM prompt             |
 
-### 🧠 Prompting Flow
+###  Prompting Flow
 
 - User asks a question
 - `rag_prompt` → `semantic_search` → top-k docs
@@ -60,7 +60,7 @@ mcp-rag-toolkit/
 
 ---
 
-## 📦 Setup
+##  Setup
 
 ### Requirements
 
@@ -78,7 +78,7 @@ poetry install
 poetry shell
 ```
 
-> 💡 Note: The embedding model will be downloaded on first use via `model_downloader.py`. You can manually trigger it with:
+>  Note: The embedding model will be downloaded on first use via `model_downloader.py`. You can manually trigger it with:
 > 
 > ```bash
 > python mcp_rag_toolkit/model_downloader.py
@@ -86,7 +86,7 @@ poetry shell
 
 ---
 
-## 🧪 Usage
+##  Usage
 
 ### 1. Index Documents
 
@@ -116,7 +116,7 @@ or
 
 ---
 
-## 🛠️ Cron-based Auto Reindexing
+##  Cron-based Auto Reindexing
 
 To keep the document index fresh, use:
 
@@ -128,24 +128,24 @@ This will periodically reindex documents via `update_index_tool.py`.
 
 ---
 
-## 🧠 Models
+##  Models
 
 - **Embedding Model**: [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
 
-> 📦 To reduce repository size, the model weights are not bundled by default. Ensure `model_downloader.py` has run to populate `mcp_rag_toolkit/models/`.
+>  To reduce repository size, the model weights are not bundled by default. Ensure `model_downloader.py` has run to populate `mcp_rag_toolkit/models/`.
 
 - FAISS index: stored at `index/vector.index`
 - Mapping file: `index/doc_mapping.pkl`
 
 ---
 
-## 📜 License
+##  License
 
 MIT License © 2025 Aadithya Vishnu Sajeev
 
 ---
 
-## 🙌 Acknowledgements
+##  Acknowledgements
 
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [FAISS by Facebook](https://github.com/facebookresearch/faiss)

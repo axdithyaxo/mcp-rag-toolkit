@@ -6,6 +6,16 @@ It enables semantic search over both structured (SQL) and unstructured (PDF, DOC
 
 ---
 
+
+## Demo
+
+Quick preview (GIF):
+
+![Demo: Semantic search + contextual answer](assets/demo.gif)
+
+
+- [Full Video Demo]()
+
 ## Key Features
 
 - **Semantic Search**: FAISS + Sentence Transformers for top‑k similarity search on local documents.  

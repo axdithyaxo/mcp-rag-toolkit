@@ -59,7 +59,7 @@ mcp-rag-toolkit/
 | MCP Tool            | Purpose                                                                           | Typical Use |
 |---------------------|------------------------------------------------------------------------------------|-------------|
 | `semantic_search`   | Returns top‑k most relevant documents by embedding similarity.                     | Find docs to cite |
-| `read_file`         | Reads supported files and returns text + metadata.                                 | Pull passages |
+| `read_file`         | Reads supported files and returns text + metadata.                                 | retreives info from the file |
 | `query_sql`         | Executes SQL against a local PostgreSQL database.                                  | Structured lookup |
 | `index_document`    | Builds FAISS index from everything in `data/`.                                     | First-time setup |
 | `rag_prompt`        | Orchestrates search + reading and composes a context‑rich prompt for the LLM.      | End-to-end Q&A |

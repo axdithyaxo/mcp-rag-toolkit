@@ -14,7 +14,7 @@ Quick preview (GIF):
 ![Demo: Semantic search + contextual answer](assets/demo.gif)
 
 
-- [Full Video Demo]()
+- [Full Video Demo](https://drive.google.com/file/d/1D88R5GvQrjklwZBhPYzqWtUlVv8iki46/view?usp=sharing)
 
 ## Key Features
 
